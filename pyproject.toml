@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "lolmax"
+version = "0.0.1"
+description = "Attempt to wield LangChain for devious personal shit"
+packages = [
+  { include = "lolmax" },
+]
+authors = []
+
+[tool.poetry.dependencies]
+python = "^3.10"
+# requests = "^2.13.0"
+# pandas = "*"
+langchain = "*"
+langchain-anthropic = "*"
+langchain-google-genai = "*"
+langchain-mistralai = "*"
+langchain-openai = "*"
+
+[tool.poetry.group.dev.dependencies]
+ipython = "*"
+ipdb = "*"
+
+[tool.poetry.scripts]
+lolmax = "lolmax.cli:main"
+
+[build-system]
+requirements = ["poetry.core"]
+build-backend = "poetry.core.masonry.api"
