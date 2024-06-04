@@ -1,26 +1,10 @@
-import argparse
 import getpass
 import os
-import sys
 
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_openai import ChatOpenAI
-
-
-def main(args=None):
-    args = args or sys.argv[1:]
-    parser = build_arg_parser()
-    opts = parser.parse_args(args)
-    return opts.func(opts)
-
-
-def build_arg_parser():
-    parser = argparse.ArgumentParser(description="lolmax cli")
-    parser.add_argument("--model", help="model to run")
-    parser.set_defaults(func=run)
-    return parser
 
 
 def read_file(path):
@@ -86,11 +70,3 @@ def mistral_chat(api_key=None, model="mistral-small"):
         ["MISTRAL_API_KEY"], ["~/.config/mistralai.token"]
     )
     return ChatMistralAI(api_key=api_key, model_name=model)
-
-
-def run(opts):
-    print(f"TODO: run lolmax with opts: {opts}")
-
-
-if __name__ == "__main__":
-    main()

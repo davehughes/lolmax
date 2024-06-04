@@ -9,20 +9,20 @@ authors = []
 
 [tool.poetry.dependencies]
 python = "^3.10"
-# requests = "^2.13.0"
-# pandas = "*"
 langchain = "*"
 langchain-anthropic = "*"
 langchain-google-genai = "*"
 langchain-mistralai = "*"
 langchain-openai = "*"
+flask = "*"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "*"
 ipdb = "*"
 
 [tool.poetry.scripts]
-lolmax = "lolmax.cli:main"
+lolmax-cli = "lolmax.cli:main"
+lolmax-app = "lolmax.app:main"
 
 [build-system]
 requirements = ["poetry.core"]
