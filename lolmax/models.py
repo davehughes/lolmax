@@ -6,6 +6,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatPerplexity
 
 import copy
 
@@ -41,11 +42,6 @@ def fetch_api_token(env_keys, paths, prompt=False):
             return api_key
 
 
-def print_chat_stream(client, prompt):
-    for chunk in client.stream(prompt):
-        print(chunk)
-
-
 MODELS = [
     {
         "id":
@@ -62,6 +58,14 @@ MODELS = [
         "claude-3-sonnet-20240229",
         "api_key":
         fetch_api_token(["ANTHROPIC_API_KEY"], ["~/.config/anthropic.token"]),
+    },
+    {
+        "id":
+        "mistral",
+        "model":
+        "mistral-small-latest",
+        "api_key":
+        fetch_api_token(["MISTRAL_API_KEY"], ["~/.config/mistralai.token"]),
     },
     {
         # This one seems to require some manual intervention for project setup
@@ -101,6 +105,14 @@ def gemini_chat(api_key: str | None = None, model: str = "gemini-pro"):
         os.environ["GOOGLE_API_KEY"] = api_key
 
     return ChatGoogleGenerativeAI(model=model)
+
+
+# Supported models: https://docs.perplexity.ai/docs/model-cards
+def perplexity_chat(api_key: str | None = None,
+                    model: str = "llama-3-sonar-large-32k-chat"):
+    api_key = api_key or fetch_api_token(["PPLX_API_KEY"],
+                                         ["~/.config/perplexity.token"])
+    return ChatPerplexity(pplx_api_key=api_key, model=model)
 
 
 # Available models (as of 2024.05.29):

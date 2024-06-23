@@ -1,23 +1,19 @@
 from dataclasses import dataclass
+import json
 
 from flask import Flask, Response, request
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+import pydantic.v1.error_wrappers
 
 from lolmax import models
 
 app = Flask(__name__)
 
 
-@app.route("/stream", methods=["POST"])
-def stream():
-    client_prompt = ChatPrompt.extract(request.json)
-
-    def generate():
-        for chunk in client_prompt.client.stream(client_prompt.messages):
-            print(f"chunk: {chunk}")
-            yield chunk.content
-
-    return Response(generate(), mimetype="text/plain")
+@app.route("/chat", methods=["POST"])
+def chat():
+    prompt = ChatPrompt.extract(request.json)
+    return Response(prompt.stream(), mimetype="application/jsonlines+json")
 
 
 @app.route("/invoke")
@@ -30,13 +26,38 @@ def invoke():
 @dataclass
 class ChatPrompt:
     model: str
-    role: str
+    effects: list[str]
     messages: list[str]
 
     @property
     def client(self):
         client_factory = initialize_models().get(self.model)
         return client_factory()
+
+    def stream(self):
+        try:
+            for chunk in self.client.stream(self.messages):
+                serializable_chunk = {
+                    "id": chunk.id,
+                    "content": chunk.content,
+                }
+                yield f"{json.dumps(serializable_chunk)}\n"
+        except pydantic.v1.error_wrappers.ValidationError as e:
+            serializable_error = {
+                "id":
+                "error",
+                "content":
+                f"An error occurred while generating a response:\n{json.dumps(e.errors())}",
+            }
+            yield f"{json.dumps(serializable_error)}\n"
+        except Exception as e:
+            __import__('ipdb').set_trace()
+            serializable_error = {
+                "content":
+                f"An error occurred while generating a response:\n{e.message}",
+                "id": "error",
+            }
+            yield f"{json.dumps(serializable_error)}\n"
 
     @property
     def converted_messages(self):
@@ -57,8 +78,8 @@ class ChatPrompt:
     @staticmethod
     def extract(d):
         return ChatPrompt(
-            model=d.get("model", "gpt4"),
-            role=d.get("role", "default"),
+            model=d.get("model", "perplexity"),
+            effects=d.get("effects", []),
             messages=d.get("messages"),
         )
 
@@ -69,6 +90,7 @@ def initialize_models():
         "gemini": models.gemini_chat,
         "anthropic": models.anthropic_chat,
         "mistral": models.mistral_chat,
+        "perplexity": models.perplexity_chat,
         "default": models.openai_chat,
     }
 

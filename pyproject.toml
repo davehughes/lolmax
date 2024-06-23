@@ -15,6 +15,7 @@ langchain-google-genai = "*"
 langchain-google-vertexai = "*"
 langchain-mistralai = "*"
 langchain-openai = "*"
+langchain-community = "*"
 flask = "*"
 
 [tool.poetry.group.dev.dependencies]
