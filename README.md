@@ -1,7 +1,7 @@
 LoLMax
 ---
-A half-baked simple server for running AI chats and other invocations through LangChain. Hoping someday this will be ok
-enough to use as a backend for a plugin similar to [vim-ai](https://github.com/madox2/vim-ai).
+A simple server for running AI chats and other invocations through LangChain. Serves as the backend
+for my [vim-ai-lolmax](https://github.com/davehughes/vim-ai-lolmax) plugin.
 
 Quickstart
 ```
@@ -15,6 +15,8 @@ poetry install
 lolmax-app
 
 # curl to send a basic prompt to a defined model
-curl -G localhost:8000/stream --data-urlencode "model=anthropic" --data-urlencode "prompt=what are some good things to
-ask an AI chatbot?"
+curl -X POST localhost:8000/chat \
+  -H "Accept: text/plain" \
+  -H "Content-Type: application/json" \
+  --date '{"model": "perplexity", "messages": [{"role": "user", "content": "hey, what's up?"}]}'
 ```
