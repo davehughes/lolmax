@@ -1,11 +1,10 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 
+import lolmax.config
 from flask import Flask, Response, request
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
-import pydantic.v1.error_wrappers
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-from lolmax import models
 
 app = Flask(__name__)
 
@@ -17,31 +16,44 @@ app = Flask(__name__)
 @app.route("/chat", methods=["POST"])
 def chat():
     prompt = ChatPrompt.extract(request.json)
-    mimetype = request.accept_mimetypes.best_match([
-        "application/jsonlines+json",
-        "application/json",
-        "text/plain",
-    ])
+    mimetype = request.accept_mimetypes.best_match(
+        [
+            "application/jsonlines+json",
+            "application/json",
+            "text/plain",
+        ]
+    )
     if mimetype == "text/plain":
         return Response(prompt.stream_text(), mimetype="text/plain")
     else:
         # default, but should implies any of: ["application/jsonlines+json", "application/json"]
-        return Response(prompt.stream_ndjson(),
-                        mimetype="application/jsonlines+json")
+        return Response(prompt.stream_ndjson(), mimetype="application/jsonlines+json")
 
 
 @app.route("/invoke", methods=["POST"])
 def invoke():
     prompt = ChatPrompt.extract(request.json)
     result = prompt.invoke()
-    mimetype = request.accept_mimetypes.best_match([
-        "application/json",
-        "text/plain",
-    ])
+    mimetype = request.accept_mimetypes.best_match(
+        [
+            "application/json",
+            "text/plain",
+        ]
+    )
     if mimetype == "text/plain":
         return Response(result["content"], mimetype="text/plain")
     else:
         return Response(json.dumps(result), mimetype="application/json")
+
+
+@app.route("/info", methods=["GET"])
+def info():
+    return Response(json.dumps(config().info()), mimetype="application/json")
+
+
+# TODO: manage memoization
+def config():
+    return lolmax.config.Config.load_config()
 
 
 @dataclass
@@ -52,8 +64,7 @@ class ChatPrompt:
 
     @property
     def client(self):
-        client_factory = initialize_models().get(self.model)
-        return client_factory()
+        return config().get_model(self.model)
 
     def invoke(self):
         result = self.client.invoke(self.messages)
@@ -69,18 +80,9 @@ class ChatPrompt:
                     "id": chunk.id,
                     "content": chunk.content,
                 }
-        except pydantic.v1.error_wrappers.ValidationError as e:
-            yield {
-                "id":
-                "error",
-                "content":
-                f"An error occurred while generating a response:\n{json.dumps(e.errors())}",
-            }
         except Exception as e:
-            __import__('ipdb').set_trace()
             yield {
-                "content":
-                f"An error occurred while generating a response:\n{e.message}",
+                "content": f"An error occurred while generating a response:\n{repr(e)}",
                 "id": "error",
             }
 
@@ -96,15 +98,15 @@ class ChatPrompt:
     def converted_messages(self):
         converted = []
         role_to_message_type = {
-            'user': HumanMessage,
-            'assistant': AIMessage,
-            'system': SystemMessage,
+            "user": HumanMessage,
+            "assistant": AIMessage,
+            "system": SystemMessage,
         }
         for message in self.messages:
-            message_type = role_to_message_type.get(message['role'])
+            message_type = role_to_message_type.get(message["role"])
             if not message_type:
                 print(f"Unrecognized message type for message: {message}")
-            converted.append(message_type(message['content']))
+            converted.append(message_type(message["content"]))
 
         return converted
 
@@ -115,17 +117,6 @@ class ChatPrompt:
             effects=d.get("effects", []),
             messages=d.get("messages"),
         )
-
-
-def initialize_models():
-    return {
-        "openai": models.openai_chat,
-        "gemini": models.gemini_chat,
-        "anthropic": models.anthropic_chat,
-        "mistral": models.mistral_chat,
-        "perplexity": models.perplexity_chat,
-        "default": models.openai_chat,
-    }
 
 
 def main():
