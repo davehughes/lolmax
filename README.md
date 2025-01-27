@@ -51,6 +51,13 @@ models:
     model: llama-3-sonar-large-32k-chat
     model_class: langchain_community.chat_models.ChatPerplexity
     pplx_api_key: perplexity
+
+  deepseek:
+    model: deepseek-chat
+    model_class: langchain_openai.chat_models.base.BaseChatOpenAI
+    openai_api_base: "https://api.deepseek.com"
+    openai_api_key: deepseek
+    max_tokens: 8192
 ```
 
 Tokens are stored in a separate file and used to replace `api_key` references in the main config file:
