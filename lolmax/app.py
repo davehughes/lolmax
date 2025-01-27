@@ -5,7 +5,6 @@ import lolmax.config
 from flask import Flask, Response, request
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
-
 app = Flask(__name__)
 
 
@@ -16,30 +15,27 @@ app = Flask(__name__)
 @app.route("/chat", methods=["POST"])
 def chat():
     prompt = ChatPrompt.extract(request.json)
-    mimetype = request.accept_mimetypes.best_match(
-        [
-            "application/jsonlines+json",
-            "application/json",
-            "text/plain",
-        ]
-    )
+    mimetype = request.accept_mimetypes.best_match([
+        "application/jsonlines+json",
+        "application/json",
+        "text/plain",
+    ])
     if mimetype == "text/plain":
         return Response(prompt.stream_text(), mimetype="text/plain")
     else:
         # default, but should implies any of: ["application/jsonlines+json", "application/json"]
-        return Response(prompt.stream_ndjson(), mimetype="application/jsonlines+json")
+        return Response(prompt.stream_ndjson(),
+                        mimetype="application/jsonlines+json")
 
 
 @app.route("/invoke", methods=["POST"])
 def invoke():
     prompt = ChatPrompt.extract(request.json)
     result = prompt.invoke()
-    mimetype = request.accept_mimetypes.best_match(
-        [
-            "application/json",
-            "text/plain",
-        ]
-    )
+    mimetype = request.accept_mimetypes.best_match([
+        "application/json",
+        "text/plain",
+    ])
     if mimetype == "text/plain":
         return Response(result["content"], mimetype="text/plain")
     else:
@@ -82,13 +78,16 @@ class ChatPrompt:
                 }
         except Exception as e:
             yield {
-                "content": f"An error occurred while generating a response:\n{repr(e)}",
+                "content":
+                f"An error occurred while generating a response:\n{repr(e)}",
                 "id": "error",
             }
 
     def stream_ndjson(self):
-        for object in self.stream_objects():
-            yield f"{json.dumps(object)}\n"
+        with open('/tmp/lolmax.log', 'a') as f:
+            for object in self.stream_objects():
+                f.write(f"{json.dumps(object)}\n")
+                yield f"{json.dumps(object)}\n"
 
     def stream_text(self):
         for object in self.stream_objects():
